@@ -43,41 +43,6 @@ def run_bot(r, comments_replied_to2, posts_replied_to, comments_skimmed, mod_com
                 with open("posts_replied_to.txt", "a", encoding='cp1252') as f:
                     f.write(post.id + "\n")
 
-    """for post in r.subreddit('Cremposting').new(limit = 5):
-        if post not in mod_posts[-10:]:
-            punc = '''!()-[]{};:'"\,<>./?@#$%^&*~'''
-            title = post.title.lower()
-
-            for ele in title:
-                if ele in punc:
-                    title = title.replace(ele, "")
-
-            for key in ['fuck moash']:
-                if key in title:
-                    post.mod.remove()
-                    post.reply(f"Hey, gancho. >!{key}!< in your title can be construed as a spoiler, thus you might want to repost this great meme with a better title.\n\n\
-^(This action was performed automatically. If you have questions, contact u/AlThorStormblessed, gon!)")
-
-                    my_comment = [comment for comment in r.user.me().comments.new(limit = 1)][0]
-                    my_comment.distinguish(sticky = True)
-
-                    removed_comments.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
-
-                    with open("removed_comments.txt", "a", encoding='cp1252') as f:
-                        f.write(comment.id + "\n")"""
-
-    '''for post in r.subreddit('Cremposting').hot(limit = 10):
-        if post.score > 500 and posts_replied_to.count(post.id) < 1:
-            post.reply("Don't forget to vote for the best post of the year!")
-            my_comment = [comment for comment in r.user.me().comments.new(limit = 1)][0]
-            my_comment.distinguish(sticky = True)
-
-            posts_replied_to.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
-
-            with open("posts_replied_to.txt", "a", encoding='cp1252') as f:
-                f.write(comment.id + "\n")
-            '''
-
 #Send me message regarding new comments at regular intervals
     if int(time.time()//60) % 31 == 0:
         buncha_comments = "\n\n..................\n\n".join([f'[{comment.body}](https://www.reddit.com{comment.permalink}) ' + comment.submission.link_flair_text + '\n\n' + comment.submission.title for comment in r.subreddit("Cremposting").comments(limit = 30)])
