@@ -297,6 +297,25 @@ jasnah_quotes = [
 "Unless I were a pig. Then you’d be doubly interested.",
 ]
 
+nightblood_quotes = ["Hello! Would you like to destroy some evil today?",
+"Hello! Would you like to destroy some evil today?",
+"Hello! Would you like to destroy some evil today?",
+"Can't you just find evil and destroy it? I'm sure you cam spot it. You seem smart. If increasingly boring.",
+"#Evil!",
+"I'm not bloodthirsty. I just want to be useful.",
+"I think you did a great job. You didn't destroy many of them, yes, but you just need some more practice!",
+"A person knows when they’re in darkness, even when they can’t see.",
+"Your way would have involved making several more corpses.",
+"Well, I am a sword. Might as well stick to what you’re good at.",
+"So much evil!",
+"#Destroy!",
+"Well, I guess this works too.",
+"I killed them all. Aren't you proud of me?",
+"[The sunset.] Crimson. Like blood in the air.",
+"Honestly, I don't trust priests.",
+"I think you are super trustworthy. And I'm a good judge of people."]
+
+
 functions = "Hey, there, Gon, you wanted to know what I can do? Well, here you go!\n\
 \n\
 1. **Lopen Insult**: Reply to any message which I haven't replied to, and I will arrive to insult the penhito. I am no Wit, but I would bet an arm that I can make them cry!\n\
@@ -644,5 +663,10 @@ lopen_quotes = [
 "[OB spoilers] >!Here it is. I, the Lopen, will now fly. You may applaud as you feel is appropriate.!<",
 ]
 
+cah1 = ["Jasnah's", "Kaladin's", "Shallan's", "Dalinar's", "Stormdaddy's", "Adolin's", "Your", "Storming",
+        "Cool", "Useless", "Our", "Glowing", "Lift's", "I would say"]
+cah2 = ["thighs", "long spear", "sword", "spheres", "gancho", "stormlight", "chasm duty", "shardblade",
+        "Breath", "rocks", "jam", "bond", "pancakes", "a femboy"]
 
-
+cah3 = ["Storm off", "Kaladin is on chasm duty", "Good bot", "That's just a chicken.", "Kaladin", "Rock", "Jasnah",
+        "Kinky", "No", "Yes", "*Harsher!*", "Dalinar", "I'm not going to say.", "Pancakes."]
