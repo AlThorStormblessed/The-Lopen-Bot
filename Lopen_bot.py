@@ -10,7 +10,6 @@ import requests
 from bs4 import BeautifulSoup, Comment
 from quotes import *
 
-
 #Bot login
 def bot_login():
     r = praw.Reddit(username = userN,
@@ -22,157 +21,155 @@ def bot_login():
     print("Logged in")
 #    print(r.user.me())
 
-def run_bot(r, comments_replied_to2, posts_replied_to, comments_skimmed, WholeWord, rank):
+def run_bot(r, comments_replied_to2, posts_replied_to, comments_skimmed, mod_comments, mod_posts, removed_comments, WholeWord, rank, count):
     for post in r.subreddit('Cremposting').hot(limit = 5):
         post_num = random.randint(1, 3)
-        if post.id not in posts_replied_to and post_num == 1:
-            mess = random.choice(["\n\n^(These words of Stormfather's were brought by the Lopen Messaging Service, by the cousins, for the cousins)",
-                "\n\n^(-Stormfather, brought by Lopen's cousins)",
-                "\n\n^(Speak further to Stormfather by mentioning !Stormfather in your comments. Anytime, anywhere. LMS)"])
-
-            list_of = "\n\n^(Use !list in your comments to view entire list LMS characters!)"
-
-            post_quotes = [
-                "This crem is accepted!".upper() + mess + list_of,
-                "Great meme, Gon!",
-                "This crem deserves some chouta!"]
-
-            post.reply(random.choice(post_quotes)) #Chooses a random quote from above list
-            print("Post found!")
-
-            posts_replied_to.append(post.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
-            with open("posts_replied_to.txt", "a", encoding='cp1252') as f:
-                f.write(post.id + "\n")
-
         if post.id not in posts_replied_to:
-            posts_replied_to.append(post.id)
+            if post_num == 1:
+                post_quotes = [
+                    "This is good crem, gancho!",
+                    "Great meme, Gon!",
+                    "This crem deserves some chouta!"]
+
+                post.reply(random.choice(post_quotes)) #Chooses a random quote from above list
+                print("Post found!")
+
+                posts_replied_to.append(post.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+                with open("posts_replied_to.txt", "a", encoding='cp1252') as f:
+                    f.write(post.id + "\n")
+
+            else:
+                posts_replied_to.append(post.id)
+                with open("posts_replied_to.txt", "a", encoding='cp1252') as f:
+                    f.write(post.id + "\n")
+
+    """for post in r.subreddit('Cremposting').new(limit = 5):
+        if post not in mod_posts[-10:]:
+            punc = '''!()-[]{};:'"\,<>./?@#$%^&*~'''
+            title = post.title.lower()
+
+            for ele in title:
+                if ele in punc:
+                    title = title.replace(ele, "")
+
+            for key in ['fuck moash']:
+                if key in title:
+                    post.mod.remove()
+                    post.reply(f"Hey, gancho. >!{key}!< in your title can be construed as a spoiler, thus you might want to repost this great meme with a better title.\n\n\
+^(This action was performed automatically. If you have questions, contact u/AlThorStormblessed, gon!)")
+
+                    my_comment = [comment for comment in r.user.me().comments.new(limit = 1)][0]
+                    my_comment.distinguish(sticky = True)
+
+                    removed_comments.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+
+                    with open("removed_comments.txt", "a", encoding='cp1252') as f:
+                        f.write(comment.id + "\n")"""
+
+    '''for post in r.subreddit('Cremposting').hot(limit = 10):
+        if post.score > 500 and posts_replied_to.count(post.id) < 1:
+            post.reply("Don't forget to vote for the best post of the year!")
+            my_comment = [comment for comment in r.user.me().comments.new(limit = 1)][0]
+            my_comment.distinguish(sticky = True)
+
+            posts_replied_to.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+
             with open("posts_replied_to.txt", "a", encoding='cp1252') as f:
-                f.write(post.id + "\n")
+                f.write(comment.id + "\n")
+            '''
 
+#Send me message regarding new comments at regular intervals
+    if int(time.time()//60) % 31 == 0:
+        buncha_comments = "\n\n..................\n\n".join([f'[{comment.body}](https://www.reddit.com{comment.permalink}) ' + comment.submission.link_flair_text + '\n\n' + comment.submission.title for comment in r.subreddit("Cremposting").comments(limit = 30)])
+        try:
+            r.redditor("AlThorStormblessed").message("New comments!", buncha_comments)
+        except:
+            r.redditor("AlThorStormblessed").message("New comments!", buncha_comments[:10000])
+        print("Message sent!")
 
-    #Stormlight Archive
-    redditor = r.redditor("Anacanrock11")
+#Modqueue
+    queue = [item for item in r.subreddit("mod").mod.modqueue(limit=None)]
+    if queue:
+        r.redditor("AlThorStormblessed").message("Item in Mod queue", "There's an item in mod queue. Check it out!")
+        print("Mod queue")
 
-    u_comment = r.redditor("Anacanrock11").comments.new(limit=1)
+#Restore removed comments
+    for comment in removed_comments[-10:]:
+        if comment:
+            comment = r.comment(id = comment)
+            if not comment.approved_by:
+                for key in ["!>", "<!", ">! ", ">!", "!<"]:
+                    if key == ">!":
+                        thing = "!<"
+                    else:
+                        thing = ">!"
 
-    for user_comment in u_comment:
-        if "previous" in user_comment.body.lower() and user_comment.id not in comments_skimmed:
+                    if key in ["!>", "<!"] and key in comment.body and (comment.body.count(key) != comment.body.count('>!>!') or comment.body.count(key) != comment.body.count('!<!<')):
+                        pass
+                    elif ">! " in comment.body and "\\>!" not in comment.body and "\\!<" not in comment.body:
+                        pass
+                    elif comment.body.count(key) != comment.body.count(thing):
+                        pass
+                    else:
+                        for my_comment in list(comment.replies):
+                                if my_comment.author == r.user.me() and 'spoiler tag' in my_comment.body.lower():
+                                    my_comment.delete()
 
-            posts = {}
-            for post in redditor.submissions.new(limit = 1000):
-                if "memeing every chapter" in post.title.lower() or "meming every chapter" in post.title.lower():
-                    posts[post.title] = post.shortlink
+                        comment.mod.approve()
+                        print("Comment approved.")
 
-            sa_posts = "The list of chapters posted till now are:\n\n"
-            for item in posts.items():
+#Inbox
+    for comment in r.inbox.comment_replies(limit = 20):
+    #Sentience
+        for word in ['sentient', 'sentience']:
+            if word in comment.body.lower() and "not " + word not in comment.body.lower() and comment.new:
+                sentient = ["Gon, I am definitely not sentient!",
+                            "Of course I am not sentient!",
+                            "Totally not sentient, lol!",
+                            "Storm off, I am a bot, not a sentient being!",
+                            "Who said I am sentient gon? Must be one of those Lighteyes.",
+                            "u/AlThorStormblessed, tell this fellow that I am *not* sentient!"]
+                comment.reply(random.choice(sentient))
+                comment.mark_read()
 
-                sa_posts += f"* [{item[0]}]({item[1]}) \n\n"
+                print("Definitely not sentient!")
 
-            sa_posts += "* [Meming every chapter of Stormlight Archive till I get bored, part 3](https://redd.it/o3apw6)\n\n"
-            sa_posts += "* [Meming every chapter of Stormlight Archive till I get bored, part 2](https://redd.it/o3amnl)\n\n"
-            sa_posts += "* [Meming every chapter of Stormlight Archive till I get bored, part 1](https://redd.it/o2mbn2)\n\n"
+    #Good bot
+        if "good bot" in comment.body.lower() and comment.new and len(comment.body) < 20:
+            good_bot = [
+                "Thanks, gancho!",
+                "I do my best, gon!",
+                "Why, you are welcome!",
+                "That's what a one-armed Herdazian is for!",
+                "That is what I do, gon!",
+                f"Good {comment.author}"
+            ]
 
-            redditor = r.redditor("The_Lopen_bot")
+            comment.reply(random.choice(good_bot)) #Chooses a random quote from above list
+            comment.mark_read()
 
-            for post in redditor.submissions.new(limit = 5):
-                if "Meming every chapter list - Stormlight Archive" in post.title:
-                    post.edit(sa_posts)
+            print("Good bot!")
 
-            comments_skimmed.append(user_comment.id)  #Simply adds the user_comment.id replied to to a list so the bot doesn't reply to it again
+    #Bad bot
+        if "bad bot" in comment.body.lower() and comment.new and len(comment.body) < 20:
+            bad_bot = [
+                "**Makes the Lopen gesture!**",
+                f"Storm off, {comment.author}!",
+            ]
 
-            with open("comments_skimmed.txt", "a", encoding='cp1252') as f:
-                f.write(user_comment.id + "\n")
+            comment.reply(random.choice(bad_bot)) #Chooses a random quote from above list
+            comment.mark_read()
 
-    #Mistborn
-    redditor = r.redditor("JeffSheldrake")
-
-    u_comment = r.redditor("JeffSheldrake").comments.new(limit=1)
-
-    for user_comment in u_comment:
-        if "index" in user_comment.body.lower() and user_comment.id not in comments_skimmed:
-
-            posts = {}
-            for post in redditor.submissions.new(limit = 1000):
-                if "memeing every chapter" in post.title.lower() or "meming every chapter" in post.title.lower():
-                    posts[post.title] = post.shortlink
-
-            mb_posts = "The list of chapters posted till now are:\n\n"
-            for item in posts.items():
-
-                mb_posts += f"* [{item[0]}]({item[1]}) \n\n"
-
-            redditor = r.redditor("The_Lopen_bot")
-
-            for post in redditor.submissions.new(limit = 5):
-                if "Meming every chapter list - Mistborn" in post.title:
-                    post.edit(mb_posts)
-
-            comments_skimmed.append(user_comment.id)  #Simply adds the user_comment.id replied to to a list so the bot doesn't reply to it again
-
-            with open("comments_skimmed.txt", "a", encoding='cp1252') as f:
-                f.write(user_comment.id + "\n")
-
-    #Elantris
-    redditor = r.redditor("SpaghettiMaestro14")
-
-    u_comment = r.redditor("SpaghettiMaestro14").comments.new(limit=1)
-
-    for user_comment in u_comment:
-        if "previous" in user_comment.body.lower() and user_comment.id not in comments_skimmed:
-
-            posts = {}
-            for post in redditor.submissions.new(limit = 1000):
-                if "memeing every chapter" in post.title.lower() or "meming every chapter" in post.title.lower():
-                    posts[post.title] = post.shortlink
-
-            el_posts = "The list of chapters posted till now are:\n\n"
-            for item in posts.items():
-
-                el_posts += f"* [{item[0]}]({item[1]}) \n\n"
-
-            redditor = r.redditor("The_Lopen_bot")
-
-            for post in redditor.submissions.new(limit = 5):
-                if "Meming every chapter list - Elantris" in post.title:
-                    post.edit(el_posts)
-
-            comments_skimmed.append(user_comment.id)  #Simply adds the user_comment.id replied to to a list so the bot doesn't reply to it again
-
-            with open("comments_skimmed.txt", "a", encoding='cp1252') as f:
-                f.write(user_comment.id + "\n")
-
-    #Warbreaker
-    redditor = r.redditor("AlThorStormblessed")
-
-    u_comment = r.redditor("AlThorStormblessed").comments.new(limit=1)
-
-    for user_comment in u_comment:
-        if "previous" in user_comment.body.lower() and user_comment.id not in comments_skimmed:
-
-            posts = {}
-            for post in redditor.submissions.new(limit = 1000):
-                if "memeing every chapter" in post.title.lower() or "meming every chapter" in post.title.lower() and "Wheel of Time" not in post.title:
-                    posts[post.title] = post.shortlink
-
-            wb_posts = "The list of chapters posted till now are (Some redos and alternate, coz my Creator is an idiot):\n\n"
-            for item in posts.items():
-
-                wb_posts += f"* [{item[0]}]({item[1]}) \n\n"
-
-            redditor = r.redditor("The_Lopen_bot")
-
-            for post in redditor.submissions.new(limit = 5):
-                if "Meming every chapter list - Warbreaker" in post.title:
-                    post.edit(wb_posts)
-
-            comments_skimmed.append(user_comment.id)  #Simply adds the user_comment.id replied to to a list so the bot doesn't reply to it again
-
-            with open("comments_skimmed.txt", "a", encoding='cp1252') as f:
-                f.write(user_comment.id + "\n")
+            print("Bad bot!")
 
 
     #Main code
-    for comment in r.subreddit('Cremposting').comments(limit = 100):
+    if count:
+        n = 50
+    else:
+        n = 400
+
+    for comment in r.subreddit('Cremposting').comments(limit = 50):
         comment.refresh()
         #Randomness to make sure Lopen doesn't reply to every comment with these words
 
@@ -183,30 +180,84 @@ def run_bot(r, comments_replied_to2, posts_replied_to, comments_skimmed, WholeWo
 
         if comment.author not in ["b0trank"]:
 
-    #Spoiler
+        #Spoiler
             for key in ["!>", "<!", ">! "]:
-                if key in comment.body and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
-                    spoiler_quotes = [
-                            f"Hey moolie, that's a bad spoiler tag. You don't want to ruin the tale for others, do you?",
-                            f"That spoiler tag doesn't work! Fix it fast!",
-                            f"Gon, I love you and all, but wrong spoiler tags are not very nice. Only storming lighteyes ruin books for others, so correct it!"
-                        ]
+                if comment.id not in mod_comments:
+                    if key in comment.body and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
+                        if key in ["!>", "<!"] and (comment.body.count(key) != comment.body.count('>!>!') or comment.body.count(key) != comment.body.count('!<!<')):
+                            extra = f"You have used {key} by mistake, which is wrong. Use \>!(Text here)\!< instead for correct spoiler tags!"
+                        elif key == ">! " and "\\>!" not in comment.body and "\\!<" not in comment.body:
+                            extra = f"There is a space between your spoiler tag and text! Remove it to fix the spoiler!"
 
-                    if key in ["!>", "<!"]:
-                        extra = f" You have used {key} by mistake, which is wrong. Use \>!(Text here)\!< instead for correct spoiler tags!"
-                    elif "\\>!" not in comment.body and "\\!<" not in comment.body:
-                        extra = f" There is a space between your spoiler tag and text! Remove it to fix the spoiler!"
+                        comment.reply(extra) #Chooses a random quote from above list
 
-                    comment.reply(random.choice(spoiler_quotes) + extra) #Chooses a random quote from above list
+                        comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+                        print("Untagged spoiler found!")
 
-                    comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
-                    print("Untagged spoiler found!")
+                        my_comment = [comment for comment in r.user.me().comments.new(limit = 1)][0]
+                        my_comment.mod.distinguish()
 
-                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                        f.write(comment.id + "\n")
+                        with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                            f.write(comment.id + "\n")
+
+                        mod_comments.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+
+                        with open("mod_comments.txt", "a", encoding='cp1252') as f:
+                            f.write(comment.id + "\n")
+
+                elif key in comment.body and comment.id not in removed_comments and r.user.me().is_mod and int(time.time() - comment.created_utc)/60 > 10:
+
+                    if (key in ["!>", "<!"] and (comment.body.count(key) != comment.body.count('>!>!') or comment.body.count(key) != comment.body.count('!<!<'))) or (key == ">! " and "\\>!" not in comment.body and "\\!<" not in comment.body):
+                        for my_comment in list(comment.replies):
+                            if my_comment.author == r.user.me() and 'spoiler tag' in my_comment.body.lower():
+                                extra = my_comment.body
+                                my_comment.delete()
+
+                        comment.reply(f"Hey gon, this comment has been removed due to bad spoiler tags. {extra} Edit your original comment for it to be reinstated, or repost it with fixed tags.\n\n^(This action was performed automatically. If you think this was done incorrectly, contact u/AlThorStormblessed.)")
+                        comment.mod.remove()
+
+                        print("Comment removed")
+
+                        my_comment = [comment for comment in r.user.me().comments.new(limit = 1)][0]
+                        my_comment.mod.distinguish()
+
+                        removed_comments.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+
+                        with open("removed_comments.txt", "a", encoding='cp1252') as f:
+                            f.write(comment.id + "\n")
 
             for key in [">!", "!<"]:
-                if key in comment.body and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
+                if comment.id not in mod_comments:
+                    if key in comment.body and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
+                        if key == ">!":
+                            thing = "!<"
+                        else:
+                            thing = ">!"
+
+                        if comment.body.count(key) == comment.body.count(thing):
+                            pass
+                        else:
+                            if comment.body.count(key) > comment.body.count(thing):
+                                tag = thing
+                            else:
+                                tag = key
+                            comment.reply(f"You are missing at least one {tag} in that comment! Fix it so others don't get spoiled!")
+
+                            comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+                            print("Untagged spoiler found!")
+
+                            my_comment = [comment for comment in r.user.me().comments.new(limit = 1)][0]
+                            my_comment.mod.distinguish()
+
+                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                f.write(comment.id + "\n")
+
+                            mod_comments.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+
+                            with open("mod_comments.txt", "a", encoding='cp1252') as f:
+                                f.write(comment.id + "\n")
+
+                elif key in comment.body and comment.id not in removed_comments and r.user.me().is_mod and int(time.time() - comment.created_utc)/60 > 10:
                     if key == ">!":
                         thing = "!<"
                     else:
@@ -215,20 +266,72 @@ def run_bot(r, comments_replied_to2, posts_replied_to, comments_skimmed, WholeWo
                     if comment.body.count(key) == comment.body.count(thing):
                         pass
                     else:
-                        if comment.body.count(key) > comment.body.count(thing):
-                            tag = thing
-                        else:
-                            tag = key
-                        comment.reply(f"You are missing at least one {tag} in that comment! Fix it so others don't get spoiled!")
+                        for my_comment in list(comment.replies):
+                            if my_comment.author == r.user.me() and 'spoiler tag' in my_comment.body.lower():
+                                extra = my_comment.body
+                                my_comment.delete()
 
-                        comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
-                        print("Spoiler untagged found!")
+                        comment.reply(f"Hey gon, this comment has been removed due to bad spoiler tags. {extra} Edit your original comment for it to be reinstated, or repost it with fixed tags.\n\n^(This action was performed automatically. If you think this was done incorrectly, contact u/AlThorStormblessed.)")
+                        comment.mod.remove()
 
-                        with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                        my_comment = [comment for comment in r.user.me().comments.new(limit = 1)][0]
+                        my_comment.mod.distinguish()
+
+                        print("Comment removed")
+
+                        removed_comments.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+
+                        with open("removed_comments.txt", "a", encoding='cp1252') as f:
                             f.write(comment.id + "\n")
 
 
-    #Coppermind function
+        #My commands
+            if "!delete" in comment.body.lower() and comment.id not in comments_replied_to2 and comment.parent().author == r.user.me():
+                if comment.author == "AlThorStormblessed":
+                    comment.parent().delete()
+
+                    comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+                    print("Comment deleted!")
+
+                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                        f.write(comment.id + "\n")
+
+                else:
+                    comment.reply(random.choice(
+                        ["Who are you, gon, to command me so?",
+                        "I don't listen to anyone but my idiot Creator!",
+                        "You aren't AlThorStormblessed..."]))
+
+                    comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+                    print("Comment *not* deleted!")
+
+                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                        f.write(comment.id + "\n")
+
+
+            if "!edit" in comment.body.lower() and comment.id not in comments_replied_to2 and comment.author == "AlThorStormblessed" and comment.parent().author == r.user.me():
+                if comment.author == "AlThorStormblessed":
+                    comment.parent().edit(comment.body.split("!edit")[-1].strip())
+
+                    comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+                    print("Comment edited!")
+
+                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                        f.write(comment.id + "\n")
+
+                else:
+                    comment.reply(random.choice(
+                        ["Who are you, gon, to command me so?",
+                        "I don't listen to anyone but my idiot Creator!",
+                        "You aren't AlThorStormblessed..."]))
+
+                    comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+                    print("Comment *not* deleted!")
+
+                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                        f.write(comment.id + "\n")
+
+        #Coppermind function
             if "!coppermind" in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
                 text = comment.body
                 text = text.split("!coppermind")[-1]
@@ -298,12 +401,158 @@ Visit {doc} to find what you want.')
                     with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
                         f.write(comment.id + "\n")
 
+        #Emulate users
+            if "!emulate" in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
+                text = comment.body
+                text = text.split("!emulate")[-1]
+                text = text.split()
+
+                search = text[0]
+
+                punc = '''!()-[]{};:'"\,<>./?@#$%^&*~'''
+
+                for ele in search:
+                    if ele in punc:
+                        search = search.replace(ele, "")
+
+                try:
+                    user = r.redditor(search)
+                    string = random.choice([comment for comment in user.comments.new(limit = None) if comment.subreddit.display_name.lower() == 'cremposting'])
+                    link = string.permalink
+                    string = string.body.split("\n\n")
+
+                    new_string = ""
+                    for ele in string:
+                        new_string += f"*>!{ele}!<* ".replace('u/mistborn', '(summoned Brando here)')
+
+                    comment.reply(f'{new_string.strip()}[Link](https://www.reddit.com{link})' + f"\n\n~{user}")
+
+                except:
+                    comment.reply("Who the hell is that, gon?")
+                comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+                print("User mimicked!")
+
+                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                    f.write(comment.id + "\n")
+
+        #Cards against humanity
+            if "!cah" in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
+                random.shuffle(cah1)
+                random.shuffle(cah2)
+
+                random_cards = [cah1[x] + ' ' + cah2[x] for x in range(len(cah1))]
+                random_cards.extend(cah3)
+
+                ques = comment.body.split("!cah")[-1].strip()
+
+                comment.reply(f"> {ques} \n\n{random.choice(random_cards)}")
+                comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+                print("Question answered!")
+
+                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                    f.write(comment.id + "\n")
+
+        #Meming every chapter
+            if "!meme_list" in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
+                text = comment.body
+                text = text.split("!meme_list")[-1]
+                text = text.split()
+
+                search = text[0]
+
+                punc = '''!()-[]{};:'"\,<>./?@#$%^&*~'''
+
+                for ele in search:
+                    if ele in punc:
+                        search = search.replace(ele, "")
+
+                if search.lower() in ["stormlight", "sa"]:
+                    comment.reply("[Meming every chapter - Stormlight Archive](https://redd.it/pkrqeg/)")
+
+                elif search.lower() in ["warbreaker", "wb"]:
+                    comment.reply("[Meming every chapter - Warbreaker](https://redd.it/pks0ux/)")
+
+                elif search.lower() in ["elantris", "el"]:
+                    comment.reply("[Meming every chapter - Elantris](https://redd.it/pkrxrw/)")
+
+                elif search.lower() in ["mistborn", "mb"]:
+                    comment.reply("[Meming every chapter - Mistborn](https://redd.it/pkrvjy/)")
+
+                else:
+                    comment.reply("No such page found, please type in the format '!meme_list (SA/MB/WB/EL)' to produce a result.")
+
+
+                comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+                print("Meme list exported!")
+
+                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                        f.write(comment.id + "\n")
+
+
+            if "!meme" in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
+                text = comment.body
+                text = text.split("!meme")[-1]
+                text = text.split()
+
+                try:
+                    punc = '''!()-[]{};:'"\,<>./?@#$%^&*~'''
+
+                    for ele in text:
+                        if ele in punc:
+                            text = text.replace(ele, "")
+
+                    search = text[0]
+                    num = int(text[1])
+
+
+                    if search.lower() in ["stormlight", "sa"]:
+                        meme_post = r.submission(id='pkrqeg')
+
+                    elif search.lower() in ["warbreaker", "wb"]:
+                        meme_post = r.submission(id='pks0ux')
+
+                    elif search.lower() in ["elantris", "el"]:
+                        meme_post = r.submission(id='pkrxrw')
+
+                    elif search.lower() in ["mistborn", "mb"]:
+                        meme_post = r.submission(id='pkrvjy')
+
+                    else:
+                        meme_post = ""
+                        comment.reply("No such page found, gon, please type in the format '!meme (SA/MB/WB/EL) (part no.)' to produce a result.")
+
+                    if meme_post:
+                        meme_text = meme_post.selftext.split("\n")
+
+                        post_links = []
+                        for element in meme_text:
+                            element2 = element
+                            for ele in element2:
+                                if ele in punc:
+                                    element2 = element2.replace(ele, " ")
+
+                            if str(num) in element2.split():
+                                post_links.append(element)
+
+
+                        text_links = "\n\n".join(post_links)
+
+                        comment.reply("Hey, gon, I think this is what you are looking for\n\n" + text_links)
+
+                except:
+                    comment.reply("Make sure you are using  the correct format, which is '!meme (SA/MB/WB/EL) (part no.)' to produce a result.")
+
+                comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+                print("Meme sent!")
+
+                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                    f.write(comment.id + "\n")
 
     #Lopen messaging service
             LMS = []
             for key in [
                 "!kaladin", "!shallan", "!adolin", "!stormfather", "!stormdaddy", "!taln", "!syl", "!pattern",
-                "!stick", "!dalinar", "!dadinar", "!rock", "!numuhukumakiaki'aialunamor", "!jasnah"
+                "!stick", "!dalinar", "!dadinar", "!rock", "!numuhukumakiaki'aialunamor", "!jasnah", "!nightblood"
             ]:
                 if key in comment.body.lower() and ('>' + key) not in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
                     LMS.append(key)
@@ -494,6 +743,23 @@ Visit {doc} to find what you want.')
                     with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
                         f.write(comment.id + "\n")
 
+                elif lms_key == "!nightblood":
+
+
+                    mess = random.choice(["\n\n^(These words of Nightblood's were brought by the Lopen Messaging Service, by the cousins, for the cousins)",
+                    "\n\n^(-Nightblood, brought by Lopen's cousins)",
+                    "\n\n^(Speak further to Nightblood by mentioning !Nightblood in your comments. Anytime, anywhere. LMS)"])
+
+                    list_of = "\n\n^(Use !list in your comments to view entire list LMS characters!)"
+
+                    comment.reply(random.choice(nightblood_quotes) + mess + list_of) #Chooses a random quote from above list
+
+                    comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
+                    print("Comment found!")
+
+                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                        f.write(comment.id + "\n")
+
 
             if "!list" in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
                 list_of = "Hey, Gancho, these are the people whom you can communicate with through the Lopen Messaging Service as of now!\n\
@@ -520,7 +786,9 @@ Visit {doc} to find what you want.')
 \n\
 * Jasnah (no, she isn't going to crush you with her thighs)\n\
 \n\
-* Wit (summoned as either ! Wit (quote to commentor) or ! Wit [...] insult (insult parent commentor)"
+* Wit (summoned as either ! Wit (quote to commentor) or ! Wit [...] insult (insult parent commentor)\n\
+\n\
+* Nightblood"
 
                 comment.reply(list_of)
 
@@ -569,25 +837,24 @@ Visit {doc} to find what you want.')
                     if insult_num == 1:
                         post = True
                         for item in r.user.me().saved(limit = None):
-                            if f"Devotee {comment.parent().author}" in item.body:
-                                if rank('present', comment.parent().author) != "Heretic":
-                                    post = False
+                            if isinstance(item, praw.models.Comment):
+                                if f"Devotee {comment.parent().author}" in item.body:
+                                    if rank('present', comment.parent().author) != "Heretic":
+                                        post = False
 
-                                    Vorin = [
-                                        "You dare try to insult a child of the Almighty? Shame!",
-                                        "This cr*mposter is protected by the Great Vorin Church. You may not insult them!",
-                                        f"Do you not recognise {rank('present', comment.parent().author)} {comment.parent().author}? You shall insult them?"
-                                    ]
+                                        Vorin = [
+                                            "You dare try to insult a child of the Almighty? Shame!",
+                                            "This cr*mposter is protected by the Great Vorin Church. You may not insult them!",
+                                            f"Do you not recognise {rank('present', comment.parent().author)} {comment.parent().author}? You shall insult them?"
+                                        ]
 
-                                    comment.reply(random.choice(Vorin)) #Chooses a random quote from above list
+                                        comment.reply(random.choice(Vorin)) #Chooses a random quote from above list
 
-                                    comments_replied_to2.append(comment.id)
-                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                        f.write(comment.id + "\n")
+                                        comments_replied_to2.append(comment.id)
+                                        with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                            f.write(comment.id + "\n")
 
                         if post:
-                            x_com = comment
-                            parent = x_com
                             fail_or_insult = random.randint(1, 5)
 
                             mess = random.choice(["\n\n^(These words of Wit's were brought by the Lopen Messaging Service, by the cousins, for the cousins)",
@@ -600,8 +867,8 @@ Visit {doc} to find what you want.')
                                 comment.reply(random.choice(wit_fail) + "\n\n" + random.choice(wit_insult) + mess + list_of)
 
                             else:
-                                if parent.id not in comments_replied_to2:
-                                    parent.reply(random.choice(wit_insult).replace(parent.author, comment.parent().author) + mess + list_of) #Chooses a random quote from above list
+                                if comment.id not in comments_replied_to2:
+                                    comment.parent().reply(random.choice(wit_insult).replace('x_com', 'comment.parent().author') + mess + list_of) #Chooses a random quote from above list
                                     comments_replied_to2.append(parent.id)
                                     print("Comment insulted!")
 
@@ -620,48 +887,50 @@ Visit {doc} to find what you want.')
                 heretic = False
                 print(rank("present", comment.author))
                 for item in r.user.me().saved(limit = None):
-                    if f"Heretic {comment.author}" in item.body and comment.id not in comments_replied_to2:
-                        heretic = True
-                        if rank("present", comment.author) == "Heretic":
-                            comment.reply(f"Heretic {comment.author} must *not* be allowed into the Holy Vorin Church!")
-                            comments_replied_to2.append(comment.id)
+                    if isinstance(item, praw.models.Comment):
+                        if f"Heretic {comment.author}" in item.body and comment.id not in comments_replied_to2:
+                            heretic = True
+                            if rank("present", comment.author) == "Heretic":
+                                comment.reply(f"Heretic {comment.author} must *not* be allowed into the Holy Vorin Church!")
+                                comments_replied_to2.append(comment.id)
 
-                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                f.write(comment.id + "\n")
+                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                    f.write(comment.id + "\n")
 
-                            print("Heretic found!")
+                                print("Heretic found!")
 
-                            post = False
+                                post = False
 
-                            break
-                        elif comment.id not in comments_replied_to2:
-                            comment.reply(f"Your Herecy has been forgiven!\n\n\
+                                break
+                            elif comment.id not in comments_replied_to2:
+                                comment.reply(f"Your Herecy has been forgiven!\n\n\
 Devotee {comment.author} has joined the Great Vorin Church! Your rank, according to your history, has been assigned as {rank('present', comment.author)}!\n\n\
 ^(We have a strict set of guidelines, which, if not followed, will lead to permanent excommunication from the Vorin Church. Type !guide to read the rules!)\n\n\
 ^(To find the many different niceties the Vorin Church beings, type out !pros in your comments. We have many nice features!)")
-                            comments_replied_to2.append(comment.id)
+                                comments_replied_to2.append(comment.id)
 
+                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                    f.write(comment.id + "\n")
+
+                                next(r.redditor("The_Lopen_bot").comments.new(limit=1)).save()
+
+                                print("New member saved")
+                                post = False
+
+                                break
+
+                for item in r.user.me().saved(limit = None):
+                    if isinstance(item, praw.models.Comment):
+                        if f"Devotee {comment.author}" in item.body and not heretic and comment.id not in comments_replied_to2:
+                            comment.reply(f"{rank('present', comment.author)} {comment.author} has already been inducted into the Holy Vorin Church!")
+                            comments_replied_to2.append(comment.id)
                             with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
                                 f.write(comment.id + "\n")
 
-                            next(r.redditor("The_Lopen_bot").comments.new(limit=1)).save()
+                            print("Devotee found!")
 
-                            print("New member saved")
                             post = False
-
                             break
-
-                for item in r.user.me().saved(limit = None):
-                    if f"Devotee {comment.author}" in item.body and not heretic and comment.id not in comments_replied_to2:
-                        comment.reply(f"{rank('present', comment.author)} {comment.author} has already been inducted into the Holy Vorin Church!")
-                        comments_replied_to2.append(comment.id)
-                        with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                            f.write(comment.id + "\n")
-
-                        print("Devotee found!")
-
-                        post = False
-                        break
 
 
                 if post and comment.id not in comments_replied_to2:
@@ -694,217 +963,228 @@ Devotee {comment.author} has joined the Great Vorin Church! Your rank, according
                         "by the survivor", "kelek's breath", "god beyond", "chull dung", "crem", "colors", "almighty is dead"]:
                 if WholeWord(key)(comment.body) and comment.id not in comments_replied_to2 and comment.id not in comments_skimmed and not comment.author == r.user.me():
                     for item in r.user.me().saved(limit = None):
-                        if f"Devotee {comment.author}" in item.body and comment.id not in comments_replied_to2:
-                            if rank('past', comment.author) != "Heretic":
-                                if rank('present', comment.author) != rank('past', comment.author) and rank('present', comment.author) != "Heretic":
-                                    comment.reply(f"Due to recent activities, your Vorin rank has changed to **{rank('present', comment.author)} from {rank('past', comment.author)}**")
-                                    comments_replied_to2.append(comment.id)
-                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                        f.write(comment.id + "\n")
+                        if isinstance(item, praw.models.Comment):
+                            if f"Devotee {comment.author}" in item.body and comment.id not in comments_replied_to2:
+                                if rank('past', comment.author) != "Heretic":
+                                    if rank('present', comment.author) != rank('past', comment.author) and rank('present', comment.author) != "Heretic":
+                                        comment.reply(f"Due to recent activities, your Vorin rank has changed to **{rank('present', comment.author)} from {rank('past', comment.author)}**")
+                                        comments_replied_to2.append(comment.id)
+                                        with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                            f.write(comment.id + "\n")
 
-                                    print("Heretic found!")
-                                elif rank('present', comment.author) == "Heretic":
-                                    comment.reply(f"Due to recent activities, you have been ***excommunicated*** from the Great Vorin Church. Never show your heretic face here again!")
-                                    comments_replied_to2.append(comment.id)
-                                    next(r.redditor("The_Lopen_bot").comments.new(limit=1)).save()
-                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                        f.write(comment.id + "\n")
+                                        print("Heretic found!")
+                                    elif rank('present', comment.author) == "Heretic":
+                                        comment.reply(f"Due to recent activities, you have been ***excommunicated*** from the Great Vorin Church. Never show your heretic face here again!")
+                                        comments_replied_to2.append(comment.id)
+                                        next(r.redditor("The_Lopen_bot").comments.new(limit=1)).save()
+                                        with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                            f.write(comment.id + "\n")
 
-                                    print("Heretic found!")
+                                        print("Heretic found!")
 
-
-                                break
+                                    break
 
             for key in ["almighty", "herald", "vorin"]:
                 if WholeWord(key)(comment.body) and comment.id not in comments_replied_to2 and comment.id not in comments_skimmed and not comment.author == r.user.me():
                     for item in r.user.me().saved(limit = None):
-                        if f"Devotee {comment.author}" in item.body:
-                            if rank('past', comment.author) != "Heretic":
-                                if rank('present', comment.author) != rank('past', comment.author) and rank('present', comment.author) != "Heretic":
-                                    comment.reply(f"Due to recent activities, your Vorin rank has changed to **{rank('present', comment.author)} from {rank('past', comment.author)}**")
-                                    comments_replied_to2.append(comment.id)
-                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                        f.write(comment.id + "\n")
-                                elif rank('present', comment.author) == "Heretic":
-                                    comment.reply(f"Due to recent activities, you have been ***excommunicated*** from the Great Vorin Church. Never show your heretic face here again!")
-                                    comments_replied_to2.append(comment.id)
-                                    next(r.redditor("The_Lopen_bot").comments.new(limit=1)).save()
-                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                        f.write(comment.id + "\n")
+                        if isinstance(item, praw.models.Comment):
+                            if f"Devotee {comment.author}" in item.body:
+                                if rank('past', comment.author) != "Heretic":
+                                    if rank('present', comment.author) != rank('past', comment.author) and rank('present', comment.author) != "Heretic":
+                                        comment.reply(f"Due to recent activities, your Vorin rank has changed to **{rank('present', comment.author)} from {rank('past', comment.author)}**")
+                                        comments_replied_to2.append(comment.id)
+                                        with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                            f.write(comment.id + "\n")
+                                    elif rank('present', comment.author) == "Heretic":
+                                        comment.reply(f"Due to recent activities, you have been ***excommunicated*** from the Great Vorin Church. Never show your heretic face here again!")
+                                        comments_replied_to2.append(comment.id)
+                                        next(r.redditor("The_Lopen_bot").comments.new(limit=1)).save()
+                                        with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                            f.write(comment.id + "\n")
 
-                                print("Vorin found!")
-                                break
+                                    print("Vorin found!")
+                                    break
 
             if "!hail" in comment.body.lower() and comment.id not in comments_replied_to2 and comment.id not in comments_skimmed and not comment.author == r.user.me():
                     for item in r.user.me().saved(limit = None):
-                        if f"Devotee {comment.author}" in item.body:
-                            if rank('past', comment.author) != "Heretic" and comment.id not in comments_replied_to2 and comment.id not in comments_skimmed:
-                                if rank('present', comment.author) in ["Holy Emperor", "Herald"]:
-                                    comment.reply(f"All hail the glory of the Almighty, the {rank('present', comment.author)} of Stormlight, {comment.author}!")
-                                    comments_replied_to2.append(comment.id)
-                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                        f.write(comment.id + "\n")
+                        if isinstance(item, praw.models.Comment):
+                            if f"Devotee {comment.author}" in item.body:
+                                if rank('past', comment.author) != "Heretic" and comment.id not in comments_replied_to2 and comment.id not in comments_skimmed:
+                                    if rank('present', comment.author) in ["Holy Emperor", "Herald"]:
+                                        comment.reply(f"All hail the glory of the Almighty, the {rank('present', comment.author)} of Stormlight, {comment.author}!")
+                                        comments_replied_to2.append(comment.id)
+                                        with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                            f.write(comment.id + "\n")
 
-                                else:
-                                    comment.reply("Who are you again??")
-                                    comments_replied_to2.append(comment.id)
-                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                        f.write(comment.id + "\n")
+                                    else:
+                                        comment.reply("Who are you again??")
+                                        comments_replied_to2.append(comment.id)
+                                        with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                            f.write(comment.id + "\n")
 
-                                print("Herald hailed!")
-                                break
+                                    print("Herald hailed!")
+                                    break
 
             if "!guide" in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
                 for item in r.user.me().saved(limit = None):
-                    if f"Devotee {comment.author}" in item.body:
-                        if rank('past', comment.author) != "Heretic":
-                            comment.reply(f"Ah, {rank('present', comment.author)} {comment.author}. You wish to seek our guidelines! Here they are:\n\n\
+                    if isinstance(item, praw.models.Comment):
+                        if f"Devotee {comment.author}" in item.body:
+                            if rank('past', comment.author) != "Heretic":
+                                comment.reply(f"Ah, {rank('present', comment.author)} {comment.author}. You wish to seek our guidelines! Here they are:\n\n\
 1. The Great Vorin Church does not permit the use of any swear words, except the name of the Almighty and the Great Heralds. Swearing shall result in reduction in rating and possible reduction in rank, even excommunication.\n\n\
 2. Any defiling of Herald names, as and when we detect it, shall result in excommunication.\n\n\
 3. No man shall dare read or write on this subreddit. Only through female scribes or ardents shall written word be transmitted (we are working on figuring out how to catch such heretics.)\n\n\
 4. Censor the name of J\*snah Kh\*lin, or use a title. Such heretics must not be tolerated. This will result in reduction in rating and possible reduction in rank, even excommunication..\n\n\
 5. For more information about ranking, type !rank.")
-                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                f.write(comment.id + "\n")
+                                comments_replied_to2.append(comment.id)
+                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                    f.write(comment.id + "\n")
 
-                            print("Guidelines!")
-                            break
+                                print("Guidelines!")
+                                break
 
             for key in ["!cat", "!dog", "!cow", "!crab"]:
                 if key in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
                     for item in r.user.me().saved(limit = None):
+                        if isinstance(item, praw.models.Comment):
+                            if f"Devotee {comment.author}" in item.body:
+                                if rank('past', comment.author) != "Heretic":
+                                    if (rank('present', comment.author) in ["Brightness", "High-noble", "Holy Emperor", "Herald"] and len(comment.body.split()) != 2) or rank('present', comment.author) == "Lighteyes":
+                                        if key == "!cat":
+                                            animal_image = random.choice(cat)
+                                        elif key == "!dog":
+                                            animal_image = random.choice(dog)
+                                        elif key == "!cow":
+                                            animal_image = random.choice(cow)
+                                        elif key == "!crab":
+                                            animal_image = random.choice(crab)
+                                        intro = random.choice(intro_list)
+                                        comment.reply(f"[{intro}]({animal_image})")
+
+                                    elif rank('present', comment.author) in ["Brightness", "High-noble", "Holy Emperor", "Herald"] and len(comment.body.split()) == 2:
+                                        author = comment.body.split()[1]
+                                        comment = y_com
+                                        print(author)
+                                        try:
+                                            for comment_other in r.redditor(author).comments.new(limit = None):
+                                                if author.lower() != "mistborn" and comment_other.subreddit.display_name.lower() == "cremposting" and comment_other.id not in comments_replied_to2:
+                                                    if key == "!cat":
+                                                        animal_image = random.choice(cat)
+                                                    elif key == "!dog":
+                                                        animal_image = random.choice(dog)
+                                                    elif key == "!cow":
+                                                        animal_image = random.choice(cow)
+
+                                                    elif key == "!crab":
+                                                        animal_image = random.choice(crab)
+
+                                                    intro = random.choice(intro_list_2)
+                                                    comment_other.reply(f"[{intro}]({animal_image})")
+                                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                                        f.write(comment_other.id + "\n")
+                                                    comment.reply("The image has been sent!")
+                                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                                        f.write(comment.id + "\n")
+                                                    break
+                                                elif author.lower() == "mistborn":
+                                                    comment.reply(f"We daren't disturb the Almighty, {comment.author}, even for cute images like such.")
+                                                    break
+                                            else:
+                                                if comment.id not in comments_replied_to2:
+                                                    comment.reply("No recent eligible comment found (change in rank criteria). Try someone else instead, or wait for them to make a new comment.")
+                                        except:
+                                            comment.reply("Image delivery has failed, O Bright One.")
+
+                                    else:
+                                        comment.reply("You are too lowly ranked to use this function. Be a good Vorin, follow the guidelines and praise the Almighty and the Heralds, and perhaps we will grant you this power!")
+
+                                    comments_replied_to2.append(comment.id)
+                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                        f.write(comment.id + "\n")
+
+                                    print("Cute image sent!")
+                                    break
+
+                                else:
+                                    comment.reply("You are a Heretic! No priveleges for you, unless you repent!")
+
+                                    comments_replied_to2.append(comment.id)
+                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                        f.write(comment.id + "\n")
+
+                                    print("Heretic found!")
+                                    break
+
+            if "!rickroll" in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
+                for item in r.user.me().saved(limit = None):
+                    if isinstance(item, praw.models.Comment):
                         if f"Devotee {comment.author}" in item.body:
                             if rank('past', comment.author) != "Heretic":
-                                if (rank('present', comment.author) in ["Brightness", "High-noble", "Holy Emperor", "Herald"] and len(comment.body.split()) != 2) or rank('present', comment.author) == "Lighteyes":
-                                    if key == "!cat":
-                                        animal_image = random.choice(cat)
-                                    elif key == "!dog":
-                                        animal_image = random.choice(dog)
-                                    elif key == "!cow":
-                                        animal_image = random.choice(cow)
-                                    elif key == "!crab":
-                                        animal_image = random.choice(crab)
-                                    intro = random.choice(intro_list)
-                                    comment.reply(f"[{intro}]({animal_image})")
+                                if (rank('present', comment.author) in ["High-noble", "Holy Emperor", "Herald"] and len(comment.body.split()) != 2):
+                                    comment.reply("O Bright One, you need to type just '!rickroll [username]' without the u/. Anything else will just confuse us.")
+                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                        f.write(comment.id + "\n")
 
-                                elif rank('present', comment.author) in ["Brightness", "High-noble", "Holy Emperor", "Herald"] and len(comment.body.split()) == 2:
+                                elif rank('present', comment.author) in ["High-noble", "Holy Emperor", "Herald"] and len(comment.body.split()) == 2:
                                     author = comment.body.split()[1]
                                     comment = y_com
-                                    print(author)
                                     try:
                                         for comment_other in r.redditor(author).comments.new(limit = None):
                                             if author.lower() != "mistborn" and comment_other.subreddit.display_name.lower() == "cremposting" and comment_other.id not in comments_replied_to2:
-                                                if key == "!cat":
-                                                    animal_image = random.choice(cat)
-                                                elif key == "!dog":
-                                                    animal_image = random.choice(dog)
-                                                elif key == "!cow":
-                                                    animal_image = random.choice(cow)
 
-                                                elif key == "!crab":
-                                                    animal_image = random.choice(crab)
+                                                link = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
                                                 intro = random.choice(intro_list_2)
-                                                comment_other.reply(f"[{intro}]({animal_image})")
+
+                                                comment_other.reply(f"[{intro}]({link})")
+                                                comments_replied_to2.append(comment_other)
                                                 with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
                                                     f.write(comment_other.id + "\n")
-                                                comment.reply("The image has been sent!")
+                                                comment.reply("The 'image' has been sent!")
+                                                comments_replied_to2.append(comment)
                                                 with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
                                                     f.write(comment.id + "\n")
                                                 break
                                             elif author.lower() == "mistborn":
-                                                comment.reply(f"We daren't disturb the Almighty, {comment.author}, even for cute images like such.")
+                                                comment.reply(f"You really want to rickroll Brandon Sanderson? The Almighty shall not be disturbed!")
+
+                                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                                    f.write(comment.id + "\n")
+
                                                 break
                                         else:
                                             if comment.id not in comments_replied_to2:
-                                                comment.reply("No recent eligible comment found (change in rank criteria). Try someone else instead, or wait for them to make a new comment.")
+                                                comment.reply("No recent eligible comment found. Try someone else instead, or wait for them to make a new comment.")
                                     except:
-                                        comment.reply("Image delivery has failed, O Bright One.")
+                                        comment.reply("Function has failed, O Bright One.")
 
-                                else:
-                                    comment.reply("You are too lowly ranked to use this function. Be a good Vorin, follow the guidelines and praise the Almighty and the Heralds, and perhaps we will grant you this power!")
+                                elif comment.id not in comments_replied_to2:
+                                    comment.reply("You are too lowly ranked to use this function (change in rank criteria). Be a good Vorin, follow the guidelines and praise the Almighty and the Heralds, and perhaps we will grant you this power!")
 
+                                comments_replied_to2.append(comment.id)
                                 with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
                                     f.write(comment.id + "\n")
 
-                                print("Cute image sent!")
+                                print("Rickroll sent!")
                                 break
 
                             else:
                                 comment.reply("You are a Heretic! No priveleges for you, unless you repent!")
 
+                                comments_replied_to2.append(comment.id)
                                 with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
                                     f.write(comment.id + "\n")
 
                                 print("Heretic found!")
                                 break
 
-            if "!rickroll" in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
-                for item in r.user.me().saved(limit = None):
-                    if f"Devotee {comment.author}" in item.body:
-                        if rank('past', comment.author) != "Heretic":
-                            if (rank('present', comment.author) in ["High-noble", "Holy Emperor", "Herald"] and len(comment.body.split()) != 2):
-                                comment.reply("O Bright One, you need to type just '!rickroll [username]' without the u/. Anything else will just confuse us.")
-                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                    f.write(comment.id + "\n")
-
-                            elif rank('present', comment.author) in ["High-noble", "Holy Emperor", "Herald"] and len(comment.body.split()) == 2:
-                                author = comment.body.split()[1]
-                                comment = y_com
-                                try:
-                                    for comment_other in r.redditor(author).comments.new(limit = None):
-                                        if author.lower() != "mistborn" and comment_other.subreddit.display_name.lower() == "cremposting" and comment_other.id not in comments_replied_to2:
-
-                                            link = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-
-                                            intro = random.choice(intro_list_2)
-
-                                            comment_other.reply(f"[{intro}]({link})")
-                                            comments_replied_to2.append(comment_other)
-                                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                                f.write(comment_other.id + "\n")
-                                            comment.reply("The 'image' has been sent!")
-                                            comments_replied_to2.append(comment)
-                                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                                f.write(comment.id + "\n")
-                                            break
-                                        elif author.lower() == "mistborn":
-                                            comment.reply(f"You really want to rickroll Brandon Sanderson? The Almighty shall not be disturbed!")
-
-                                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                                f.write(comment.id + "\n")
-
-                                            break
-                                    else:
-                                        if comment.id not in comments_replied_to2:
-                                            comment.reply("No recent eligible comment found. Try someone else instead, or wait for them to make a new comment.")
-                                except:
-                                    comment.reply("Function has failed, O Bright One.")
-
-                            elif comment.id not in comments_replied_to2:
-                                comment.reply("You are too lowly ranked to use this function (change in rank criteria). Be a good Vorin, follow the guidelines and praise the Almighty and the Heralds, and perhaps we will grant you this power!")
-
-                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                f.write(comment.id + "\n")
-
-                            print("Rickroll sent!")
-                            break
-
-                        else:
-                            comment.reply("You are a Heretic! No priveleges for you, unless you repent!")
-
-                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                f.write(comment.id + "\n")
-
-                            print("Heretic found!")
-                            break
-
 
             if "!rank" in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
                 for item in r.user.me().saved(limit = None):
-                    if f"Devotee {comment.author}" in item.body:
-                        if rank('past', comment.author) != "Heretic":
-                            comment.reply(f"The Vorin ranking system is very complex. Devotees gain higher ranks by being good Vorins, and fall in rankings by breaking guidelines. Steep falls can result in excommunication, at least till such behavious is rectified, in which case they may re-join.\n\n\
+                    if isinstance(item, praw.models.Comment):
+                        if f"Devotee {comment.author}" in item.body:
+                            if rank('past', comment.author) != "Heretic":
+                                comment.reply(f"The Vorin ranking system is very complex. Devotees gain higher ranks by being good Vorins, and fall in rankings by breaking guidelines. Steep falls can result in excommunication, at least till such behavious is rectified, in which case they may re-join.\n\n\
 Your rank for now is ***{rank('present', comment.author)}*** (change in rank criteria)\n\n\
 The ranking is as follows:\n\n\
 1. Herald: Everything Holy Emperors have\n\n\
@@ -916,107 +1196,111 @@ The ranking is as follows:\n\n\
 7. Heretics: removed from the Church, no priveleges.\n\n\
 Powers may not have been unlocked yet, if something doesn't work as expected, please bear patience.")
 
-                            comments_replied_to2.append(comment.id)
-                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                f.write(comment.id + "\n")
+                                comments_replied_to2.append(comment.id)
+                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                    f.write(comment.id + "\n")
 
-                            print("Guidelines!")
-                            break
+                                print("Guidelines!")
+                                break
 
-                        else:
-                            comment.reply(f"You are a st*rming heretic!")
-                            comments_replied_to2.append(comment.id)
-                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                f.write(comment.id + "\n")
-                            break
+                            else:
+                                comment.reply(f"You are a st*rming heretic!")
+                                comments_replied_to2.append(comment.id)
+                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                    f.write(comment.id + "\n")
+                                break
 
-            if WholeWord("jasnah")(comment.body) and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
+            if WholeWord("jasnah")(comment.body) and comment.id not in comments_skimmed and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
                 for item in r.user.me().saved(limit = None):
-                    if f"Devotee {comment.author}" in item.body:
-                        if rank('past', comment.author) != "Heretic" and comment.id not in comments_replied_to2:
-                            if rank('present', comment.author) != rank('past', comment.author) and rank('present', comment.author) != "Heretic":
-                                comment.reply(f"Due to recent activities (change in rank criteria), your Vorin rank has changed to **{rank('present', comment.author)} from {rank('past', comment.author)}**")
-                                comments_replied_to2.append(comment.id)
-                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                    f.write(comment.id + "\n")
-                            elif rank('present', comment.author) == "Heretic":
-                                comment.reply(f"Due to recent activities (change in rank criteria), you have been ***excommunicated*** from the Great Vorin Church. Never show your heretic face here again!")
-                                comments_replied_to2.append(comment.id)
-                                next(r.redditor("The_Lopen_bot").comments.new(limit=1)).save()
-                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                    f.write(comment.id + "\n")
+                    if isinstance(item, praw.models.Comment):
+                        if f"Devotee {comment.author}" in item.body:
+                            if rank('past', comment.author) != "Heretic" and comment.id not in comments_replied_to2:
+                                if rank('present', comment.author) != rank('past', comment.author) and rank('present', comment.author) != "Heretic":
+                                    comment.reply(f"Due to recent activities (change in rank criteria), your Vorin rank has changed to **{rank('present', comment.author)} from {rank('past', comment.author)}**")
+                                    comments_replied_to2.append(comment.id)
+                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                        f.write(comment.id + "\n")
+                                elif rank('present', comment.author) == "Heretic":
+                                    comment.reply(f"Due to recent activities (change in rank criteria), you have been ***excommunicated*** from the Great Vorin Church. Never show your heretic face here again!")
+                                    comments_replied_to2.append(comment.id)
+                                    next(r.redditor("The_Lopen_bot").comments.new(limit=1)).save()
+                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                        f.write(comment.id + "\n")
 
-                            print("Heretic found!")
-                            break
+                                print("Heretic found!")
+                                break
 
             if "!pros" in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
                 for item in r.user.me().saved(limit = None):
-                    if f"Devotee {comment.author}" in item.body:
-                        if rank("present", comment.author) != "Heretic":
-                            comment.reply(f"Ah, {rank('present', comment.author)} (change in rank criteria) {comment.author}. The features of the Vorin Church are many! There they are:\n\n\
+                    if isinstance(item, praw.models.Comment):
+                        if f"Devotee {comment.author}" in item.body:
+                            if rank("present", comment.author) != "Heretic":
+                                comment.reply(f"Ah, {rank('present', comment.author)} (change in rank criteria) {comment.author}. The features of the Vorin Church are many! There they are:\n\n\
 1. No one may insult you, neither the fool Wit, nor the one-armed Herdazian. You will be safe from insults from all but the Church itself.\n\n\
 2. You have unlocked the Great Vorin Insult. Type !vorinsult to any heretic or Vorin, and we shall insult them with special, holy insults.\n\n\
 3. You can gain or lose rank by praying by the Almighty's name, or by breaking the guidelines respectively. You can reach dizzying heights in the Vorin Church!\n\n\
 4. Many new functions shall be granted as you rise in rank!")
-                            comments_replied_to2.append(comment.id)
-                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                f.write(comment.id + "\n")
+                                comments_replied_to2.append(comment.id)
+                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                    f.write(comment.id + "\n")
 
-                            print("Advantages!")
-                            break
+                                print("Advantages!")
+                                break
 
 
             if "!cons" in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
                 for item in r.user.me().saved(limit = None):
-                    if f"Devotee {comment.author}" in item.body:
-                        if rank("present", comment.author) != "Heretic":
-                            comment.reply(f"St*rm you. There are no st*rming cons to the Great Vorin Church, so stop asking.")
-                            comments_replied_to2.append(comment.id)
-                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                f.write(comment.id + "\n")
+                    if isinstance(item, praw.models.Comment):
+                        if f"Devotee {comment.author}" in item.body:
+                            if rank("present", comment.author) != "Heretic":
+                                comment.reply(f"St*rm you. There are no st*rming cons to the Great Vorin Church, so stop asking.")
+                                comments_replied_to2.append(comment.id)
+                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                    f.write(comment.id + "\n")
 
-                            print("Advantages!")
-                            break
+                                print("Advantages!")
+                                break
 
             if ("!vorinsult" in comment.body.lower() or "!vorin insult" in comment.body.lower()) and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
                 post = True
                 for item in r.user.me().saved(limit = None):
-                    if f"Devotee {comment.author}" in item.body:
-                        if rank("present", comment.author) != "Heretic" and rank("present", comment.parent().author) not in ["Brightness", "High-noble", "Holy Emperor", "Herald"]:
-                            post = False
-                            parent = comment.parent()
+                    if isinstance(item, praw.models.Comment):
+                        if f"Devotee {comment.author}" in item.body:
+                            if rank("present", comment.author) != "Heretic" and rank("present", comment.parent().author) not in ["Brightness", "High-noble", "Holy Emperor", "Herald"]:
+                                post = False
+                                parent = comment.parent()
 
-                            if parent.id not in comments_replied_to2:
-                                extra = f"\n\n ^(This insult was requested by Devotee {comment.author})"
-                                parent.reply(random.choice(vorin_insult_quotes) + extra) #Chooses a random quote from above list
-                                comments_replied_to2.append(parent.id)
-                                print("Comment insulted!")
+                                if parent.id not in comments_replied_to2:
+                                    extra = f"\n\n ^(This insult was requested by Devotee {comment.author})"
+                                    parent.reply(random.choice(vorin_insult_quotes) + extra) #Chooses a random quote from above list
+                                    comments_replied_to2.append(parent.id)
+                                    print("Comment insulted!")
 
-                                comment.reply(random.choice(vorin_success_quotes)) #Chooses a random quote from above list
+                                    comment.reply(random.choice(vorin_success_quotes)) #Chooses a random quote from above list
 
-                            else:
-                                comment.reply(random.choice(vorin_fail_quotes)) #Chooses a random quote from above list
+                                else:
+                                    comment.reply(random.choice(vorin_fail_quotes)) #Chooses a random quote from above list
 
-                            comments_replied_to2.append(comment.id)
-                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                f.write(comment.id + "\n")
-                            break
+                                comments_replied_to2.append(comment.id)
+                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                    f.write(comment.id + "\n")
+                                break
 
-                        elif rank("present", comment.author) != "Heretic":
-                            high_quotes = [
-                                f"{comment.parent().author} is too highly ranked for even us to insult. You can, however, compliment them.",
-                                f"You dare try to insult {rank('present', comment.parent().author)} {comment.parent().author}?",
-                                f"Pray, for the insult has not reached them!",
-                                f"St*rm off, {comment.author}. We won't insult such a distinguished member of our Church."
-                            ]
+                            elif rank("present", comment.author) != "Heretic":
+                                high_quotes = [
+                                    f"{comment.parent().author} is too highly ranked for even us to insult. You can, however, compliment them.",
+                                    f"You dare try to insult {rank('present', comment.parent().author)} {comment.parent().author}?",
+                                    f"Pray, for the insult has not reached them!",
+                                    f"St*rm off, {comment.author}. We won't insult such a distinguished member of our Church."
+                                ]
 
-                            comment.reply(random.choice(high_quotes)) #Chooses a random quote from above list
+                                comment.reply(random.choice(high_quotes)) #Chooses a random quote from above list
 
-                            comments_replied_to2.append(comment.id)
-                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                f.write(comment.id + "\n")
-                            post = False
-                            break
+                                comments_replied_to2.append(comment.id)
+                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                    f.write(comment.id + "\n")
+                                post = False
+                                break
 
                 if post and comment.id not in comments_replied_to2:
                     comment.reply("Only the members of the Great Vorin Church can use this feature. If you are not a heretic, type !join to be welcomed by us!")
@@ -1024,31 +1308,32 @@ Powers may not have been unlocked yet, if something doesn't work as expected, pl
                     with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
                         f.write(comment.id + "\n")
 
-            if "!vorin compliment" in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
+            if ("!vorin compliment" in comment.body.lower() or "!praise" in comment.body.lower()) and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
                 post = True
                 for item in r.user.me().saved(limit = None):
-                    if f"Devotee {comment.author}" in item.body:
-                        if rank("present", comment.author) != "Heretic":
-                            post = False
+                    if isinstance(item, praw.models.Comment):
+                        if f"Devotee {comment.author}" in item.body:
+                            if rank("present", comment.author) != "Heretic":
+                                post = False
 
-                            parent = comment.parent()
+                                parent = comment.parent()
 
-                            if parent.id not in comments_replied_to2:
-                                extra = f"\n\n ^(This compliment was requested by Devotee {comment.author})"
-                                parent.reply(random.choice(vorin_compliment_quotes) + extra) #Chooses a random quote from above list
-                                comments_replied_to2.append(parent.id)
-                                print("Comment complimented!")
+                                if parent.id not in comments_replied_to2:
+                                    extra = f"\n\n ^(This compliment was requested by Devotee {comment.author})"
+                                    parent.reply(random.choice(vorin_compliment_quotes) + extra) #Chooses a random quote from above list
+                                    comments_replied_to2.append(parent.id)
+                                    print("Comment complimented!")
 
-                                comment.reply(random.choice(vorin_success_quotes_2)) #Chooses a random quote from above list
+                                    comment.reply(random.choice(vorin_success_quotes_2)) #Chooses a random quote from above list
 
-                            else:
-                                comment.reply(random.choice(vorin_fail_quotes_2)) #Chooses a random quote from above list
+                                else:
+                                    comment.reply(random.choice(vorin_fail_quotes_2)) #Chooses a random quote from above list
 
-                            comments_replied_to2.append(comment.id)
-                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                f.write(comment.id + "\n")
+                                comments_replied_to2.append(comment.id)
+                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                    f.write(comment.id + "\n")
 
-                            break
+                                break
 
                 if post:
                     comment.reply("Only the members of the Great Vorin Church can use this feature. If you are not a heretic, type !join to be welcomed by us!")
@@ -1058,54 +1343,55 @@ Powers may not have been unlocked yet, if something doesn't work as expected, pl
 
             if "!insult" in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
                 for item in r.user.me().saved(limit = None):
-                    if f"Devotee {comment.author}" in item.body:
-                        if rank('past', comment.author) != "Heretic":
-                            if (rank('present', comment.author) in ["High-noble", "Holy Emperor", "Herald"] and len(comment.body.split()) != 2):
-                                comment.reply("O Bright One, you need to type just '!insult [username]' without the u/. Anything else will just confuse us.")
+                    if isinstance(item, praw.models.Comment):
+                        if f"Devotee {comment.author}" in item.body:
+                            if rank('past', comment.author) != "Heretic":
+                                if (rank('present', comment.author) in ["High-noble", "Holy Emperor", "Herald"] and len(comment.body.split()) != 2):
+                                    comment.reply("O Bright One, you need to type just '!insult [username]' without the u/. Anything else will just confuse us.")
+                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                        f.write(comment.id + "\n")
+
+                                elif rank('present', comment.author) in ["High-noble", "Holy Emperor", "Herald"] and len(comment.body.split()) == 2:
+                                    author = comment.body.split()[1]
+                                    try:
+                                        for comment_other in r.redditor(author).comments.new(limit = 15):
+                                            if author.lower() != "mistborn" and comment_other.subreddit.display_name.lower() == "cremposting" and comment_other.id not in comments_replied_to2:
+
+                                                extra = f"\n\n ^(This insult was requested by {comment.author})"
+                                                comment_other.reply(random.choice(vorin_insult_send) + extra)
+                                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                                    f.write(comment_other.id + "\n")
+                                                comment.reply("The insult has been sent!")
+                                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                                    f.write(comment.id + "\n")
+                                                break
+                                            elif author.lower() == "mistborn":
+                                                comment.reply(f"You really want to insult Brandon Sanderson? The Almighty shall not be disturbed!")
+                                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                                    f.write(comment.id + "\n")
+                                                break
+                                        else:
+                                            if comment.id not in comments_replied_to2:
+                                                comment.reply("No recent eligible comment found. Try someone else instead, or wait for them to make a new comment.")
+                                    except:
+                                        comment.reply("Insult has failed, O Bright One.")
+                                elif comment.id not in comments_replied_to2:
+                                    comment.reply("You are too lowly ranked to use this function (change in rank criteria). Be a good Vorin, follow the guidelines and praise the Almighty and the Heralds, and perhaps we will grant you this power!")
+
                                 with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
                                     f.write(comment.id + "\n")
 
-                            elif rank('present', comment.author) in ["High-noble", "Holy Emperor", "Herald"] and len(comment.body.split()) == 2:
-                                author = comment.body.split()[1]
-                                try:
-                                    for comment_other in r.redditor(author).comments.new(limit = 15):
-                                        if author.lower() != "mistborn" and comment_other.subreddit.display_name.lower() == "cremposting" and comment_other.id not in comments_replied_to2:
+                                print("Distance insult sent!")
+                                break
 
-                                            extra = f"\n\n ^(This insult was requested by {comment.author})"
-                                            comment_other.reply(random.choice(vorin_insult_send) + extra)
-                                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                                f.write(comment_other.id + "\n")
-                                            comment.reply("The insult has been sent!")
-                                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                                f.write(comment.id + "\n")
-                                            break
-                                        elif author.lower() == "mistborn":
-                                            comment.reply(f"You really want to insult Brandon Sanderson? The Almighty shall not be disturbed!")
-                                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                                f.write(comment.id + "\n")
-                                            break
-                                    else:
-                                        if comment.id not in comments_replied_to2:
-                                            comment.reply("No recent eligible comment found. Try someone else instead, or wait for them to make a new comment.")
-                                except:
-                                    comment.reply("Insult has failed, O Bright One.")
-                            elif comment.id not in comments_replied_to2:
-                                comment.reply("You are too lowly ranked to use this function (change in rank criteria). Be a good Vorin, follow the guidelines and praise the Almighty and the Heralds, and perhaps we will grant you this power!")
+                            else:
+                                comment.reply("You are a Heretic! No priveleges for you, unless you repent!")
 
-                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                f.write(comment.id + "\n")
+                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                    f.write(comment.id + "\n")
 
-                            print("Distance insult sent!")
-                            break
-
-                        else:
-                            comment.reply("You are a Heretic! No priveleges for you, unless you repent!")
-
-                            with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                f.write(comment.id + "\n")
-
-                            print("Heretic found!")
-                            break
+                                print("Heretic found!")
+                                break
 
 
             for key in ["syladin", "femboy"]:
@@ -1143,23 +1429,24 @@ Powers may not have been unlocked yet, if something doesn't work as expected, pl
                 if WholeWord(key)(comment.body) and (WholeWord("lopen")(comment.body) or WholeWord("gancho")(comment.body)) and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
                     post = True
                     for item in r.user.me().saved(limit = None):
-                        if"Devotee {comment.author}" in item.body:
-                            if rank("present", comment.author) != "Heretic":
-                                post = False
+                        if isinstance(item, praw.models.Comment):
+                            if"Devotee {comment.author}" in item.body:
+                                if rank("present", comment.author) != "Heretic":
+                                    post = False
 
-                                Vorin = [
-                                    "You dare try to insult a child of the Almighty? Shame!",
-                                    "This cr*mposter is protected by the Great Vorin Church. You may not insult them!",
-                                    f"Do you not recognise Devotee {comment.parent().author}? You shall insult them!"
-                                ]
+                                    Vorin = [
+                                        "You dare try to insult a child of the Almighty? Shame!",
+                                        "This cr*mposter is protected by the Great Vorin Church. You may not insult them!",
+                                        f"Do you not recognise Devotee {comment.parent().author}? You shall insult them!"
+                                    ]
 
-                                comment.reply(random.choice(Vorin)) #Chooses a random quote from above list
+                                    comment.reply(random.choice(Vorin)) #Chooses a random quote from above list
 
-                                comments_replied_to2.append(comment.id)
-                                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                                    f.write(comment.id + "\n")
+                                    comments_replied_to2.append(comment.id)
+                                    with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
+                                        f.write(comment.id + "\n")
 
-                                print("Comment not insulted")
+                                    print("Comment not insulted")
 
                     if post:
 
@@ -1214,41 +1501,15 @@ Powers may not have been unlocked yet, if something doesn't work as expected, pl
 
                 if not answer:
                     for item in r.user.me().saved(limit = None):
-                        element = item.body
-                        element2 = item.body
+                        if isinstance(item, praw.models.Comment):
+                            element = item.body
+                            element2 = item.body
 
-                        for char in ",!.!?!;!:".split("!"):
-                            element2 = element2.replace(char, "")
-                            element2.strip()
-
-                        if question.lower() in element2.lower():
-                            if "!a" in element:
-                                new_ele = element.split("!a")
-                            else:
-                                new_ele = element.split("!A")
-                            new_ele = new_ele[1]
-                            new_ele2 = new_ele.split()[:]
-
-                            answer = " ".join(new_ele2)
-                            answer.strip()
-                            break
-
-                        else:
-                            if "!a" in element:
-                                new_ele = element2.split("!a")
-                            else:
-                                new_ele = element2.split("!A")
-                            new_ele = new_ele[0]
-
-                            if "!q" in element:
-                                new_ele = new_ele.split("!q")
-                            else:
-                                new_ele = new_ele.split("!Q")
-                            if len(new_ele) > 1:
-                                element2 = new_ele[1]
+                            for char in ",!.!?!;!:".split("!"):
+                                element2 = element2.replace(char, "")
                                 element2.strip()
 
-                            if element2.lower() in question.lower():
+                            if question.lower() in element2.lower():
                                 if "!a" in element:
                                     new_ele = element.split("!a")
                                 else:
@@ -1259,6 +1520,33 @@ Powers may not have been unlocked yet, if something doesn't work as expected, pl
                                 answer = " ".join(new_ele2)
                                 answer.strip()
                                 break
+
+                            else:
+                                if "!a" in element:
+                                    new_ele = element2.split("!a")
+                                else:
+                                    new_ele = element2.split("!A")
+                                new_ele = new_ele[0]
+
+                                if "!q" in element:
+                                    new_ele = new_ele.split("!q")
+                                else:
+                                    new_ele = new_ele.split("!Q")
+                                if len(new_ele) > 1:
+                                    element2 = new_ele[1]
+                                    element2.strip()
+
+                                if element2.lower() in question.lower():
+                                    if "!a" in element:
+                                        new_ele = element.split("!a")
+                                    else:
+                                        new_ele = element.split("!A")
+                                    new_ele = new_ele[1]
+                                    new_ele2 = new_ele.split()[:]
+
+                                    answer = " ".join(new_ele2)
+                                    answer.strip()
+                                    break
 
                 if answer:
                     comment.reply(answer)
@@ -1395,50 +1683,9 @@ I'll learn it fast and give you the answer once you ask for it again!")
 
                 print("Swear words found!")
 
-
-        #Good bot
-            parent = comment.parent()
-            if "good bot" in comment.body.lower() and comment.id not in comments_replied_to2 and parent.author == r.user.me() and len(comment.body) < 20:
-                good_bot = [
-                    "Thanks, gancho!",
-                    "I do my best, gon!",
-                    "Why, you are welcome!",
-                    "That's what a one-armed Herdazian is for!",
-                    "That is what I do, gon!",
-                    f"Good {comment.author}"
-                ]
-
-                comment.reply(random.choice(good_bot)) #Chooses a random quote from above list
-
-                comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
-
-                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                    f.write(comment.id + "\n")
-
-                print("Comment found!")
-
-        #Bad bot
-            parent = comment.parent()
-            if "bad bot" in comment.body.lower() and comment.id not in comments_replied_to2 and parent.author == r.user.me() and len(comment.body) < 20:
-                bad_bot = [
-                    "**Makes the Lopen gesture!**",
-                    f"Storm off, {comment.author}!",
-                ]
-
-                comment.reply(random.choice(bad_bot)) #Chooses a random quote from above list
-
-                comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
-
-                with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                    f.write(comment.id + "\n")
-
-                print("Comment found!")
-
         #gancho
             for key in ["gancho", "moolie", "gon", "penhito", r.user.me(), "the lopen", "ganchos"]:
                 if WholeWord(key)(comment.body) and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
-
-
                     comment.reply(random.choice(lopen_quotes)) #Chooses a random quote from above list
 
                     comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
@@ -1451,13 +1698,13 @@ I'll learn it fast and give you the answer once you ask for it again!")
         #pancakes
             for key in ["journey before destination"]:
                 if WholeWord(key)(comment.body) and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
-                    lopen_quotes = [
+                    lopen_other_quotes = [
                         "[OB spoilers] >!Do you mean Journey Before Pancakes, gancho?!<",
                         "[OB spoilers] >!Life before Death, Strength Before Weakness, Journey beforePancakes!<",
                         "[OB spoilers] >!NOW? I was saving that for a dramatic moment, you penhito! Why didn't you listen earlier? We were, sure, all about to die and things!!<",
                         "[DS spoilers] >!I'll do it, then. I've got to protect people, you know? Even from myself. Gotta rededicate to being the best Lopen possible. A better, improved, extra-incredible Lopen.!<"
                     ]
-                    comment.reply(random.choice(lopen_quotes)) #Chooses a random quote from above list
+                    comment.reply(random.choice(lopen_other_quotes)) #Chooses a random quote from above list
 
                     comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
 
@@ -1465,57 +1712,6 @@ I'll learn it fast and give you the answer once you ask for it again!")
                         f.write(comment.id + "\n")
 
                     print("Comment found!")
-
-
-        #happy
-            for key in ["good", "happy", "awesome", "nice", "happiness", "cool", "fantastic", "sweet",
-            "noice", "brilliant", "joy", "awesomeness", "wow", "happily", "great", "nicely", "sweetly",
-            "joyous", "greatly", "whoop"]:
-                if WholeWord(key)(comment.body) and comment.id not in comments_replied_to2 and comment.id not in comments_skimmed and not comment.author == r.user.me():
-                    happy_quotes = [
-                        f"{key.capitalize()} is good! For more awesomeness, just ask for \"Lopen Joke\", and I'll give some to you!",
-                        f"I have detected '{key}' in your comment, and have come to share the positivity!"
-                    ]
-
-                    if (happy_num := random.randint(1, 30)) == 2:
-                        comment.reply(random.choice(happy_quotes)) #Chooses a random quote from above list
-
-                        comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
-
-                        with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                            f.write(comment.id + "\n")
-
-                        print("Comment found!")
-
-                    elif comment.id not in comments_skimmed:
-                        comments_skimmed.append(comment.id)
-
-                        with open("comments_skimmed.txt", "a", encoding='cp1252') as f:
-                            f.write(comment.id + "\n")
-        #sad
-            for key in ["sad", "depress", "depressed", "trauma", "depression", "not happy", "hurt", "ache",
-            "heartache", "sadly", "unfortunate", "unfortunately", "traumatic"]:
-                if WholeWord(key)(comment.body) and comment.id not in comments_replied_to2 and comment.id not in comments_skimmed and not comment.author == r.user.me():
-                    sad_quotes = [
-                        f"Hey gancho, you used '{key}' in your comment. If you're sad, want to hear a joke? Just type \"The Lopen Joke\", and I'll give one to you!",
-                        f"Gon, you good? I detected '{key}' in your comment."
-                    ]
-
-                    if (sad_num := random.randint(1, 30)) == 2:
-                        comment.reply(random.choice(sad_quotes)) #Chooses a random quote from above list
-
-                        comments_replied_to2.append(comment.id)  #Simply adds the comment.id replied to to a list so the bot doesn't reply to it again
-
-                        with open("comments_replied_to2.txt", "a", encoding='cp1252') as f:
-                            f.write(comment.id + "\n")
-
-                        print("Comment found!")
-
-                    elif comment.id not in comments_skimmed:
-                        comments_skimmed.append(comment.id)
-
-                        with open("comments_skimmed.txt", "a", encoding='cp1252') as f:
-                            f.write(comment.id + "\n")
 
         #Stick
             if "you could be fire" in comment.body.lower() and comment.id not in comments_replied_to2 and not comment.author == r.user.me():
@@ -1683,6 +1879,48 @@ def get_skimmed_comments():
 
     return comments_skimmed
 
+def get_mod_posts():
+
+    if not os.path.isfile("mod_posts.txt"):
+
+        mod_posts = []
+
+    else:
+
+        with open("mod_posts.txt", "r", encoding='cp1252') as f:
+            mod_posts = f.read()
+            mod_posts = mod_posts.split("\n")
+
+    return mod_posts
+
+def get_mod_comments():
+
+    if not os.path.isfile("mod_comments.txt"):
+
+        mod_comments = []
+
+    else:
+
+        with open("mod_comments.txt", "r", encoding='cp1252') as f:
+            mod_comments = f.read()
+            mod_comments = mod_comments.split("\n")
+
+    return mod_comments
+
+def get_removed_comments():
+
+    if not os.path.isfile("removed_comments.txt"):
+
+        removed_comments = []
+
+    else:
+
+        with open("removed_comments.txt", "r", encoding='cp1252') as f:
+            removed_comments = f.read()
+            removed_comments = removed_comments.split("\n")
+
+    return removed_comments
+
 #Splits comment replied to into whole words
 def WholeWord(w):
 
@@ -1734,14 +1972,20 @@ def rank(time, author):
 
 #Running the functions
 r = bot_login()
-comments_replied_to2 = get_saved_comments()
-comments_skimmed = get_skimmed_comments()
-posts_replied_to = get_saved_posts()
-
+comments_replied_to2 = get_saved_comments()[-200:]
+comments_skimmed = get_skimmed_comments()[-500:]
+posts_replied_to = get_saved_posts()[-20:]
+mod_posts = get_mod_posts()
+mod_comments = get_mod_comments()
+removed_comments = get_removed_comments()
+#Sometimes the bot stops working while I am asleep, and remains down for hours.
+#So, when it is up again, it will check 400 comments the first run to see if it missed anything, then 50 further on.
+count = 0
 
 while True:
     try:
-        run_bot(r, comments_replied_to2, posts_replied_to, comments_skimmed, WholeWord, rank)
+        run_bot(r, comments_replied_to2, posts_replied_to, comments_skimmed, mod_comments, mod_posts, removed_comments, WholeWord, rank, count)
+        count = 1
     except:
         print("Error")
         time.sleep(120)
